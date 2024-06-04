@@ -1,0 +1,60 @@
+建立连接：
+
+请求URL: http://localhost:5000/connect
+请求方法: POST
+发送单个Modbus请求：
+
+请求URL: http://localhost:5000/send_request
+请求方法: POST
+请求体:
+json
+{
+  "slave_id": 1,
+  "address": 100,
+  "value": 42,
+  "endian": "big"
+}
+发送多个Modbus请求（高位在前的字节序）：
+
+请求URL: http://localhost:5000/send_requests_big
+请求方法: POST
+请求体:
+json
+[
+  {
+    "slave_id": 1,
+    "address": 100,
+    "value": 42,
+    "endian": "big"
+  },
+  {
+    "slave_id": 1,
+    "address": 200,
+    "value": 1234,
+    "endian": "big"
+  }
+]
+发送多个Modbus请求（低位在前的字节序）：
+
+请求URL: http://localhost:5000/send_requests_little
+请求方法: POST
+请求体:
+json
+[
+  {
+    "slave_id": 1,
+    "address": 100,
+    "value": 42,
+    "endian": "little"
+  },
+  {
+    "slave_id": 1,
+    "address": 200,
+    "value": 1234,
+    "endian": "little"
+  }
+]
+关闭连接：
+
+请求URL: http://localhost:5000/close
+请求方法: POST

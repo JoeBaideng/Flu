@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<case>//这个是放在前端储存的文件，用于储存一些配置信息
+    <groups>
+        <group id="1"/>
+        <group id="2"/>
+        <group id="3"/>
+    </groups>
+    <programs>
+        <program id="loading_sample" volume="2" velocity="2"/>
+        <program id="washing" volume="2" velocity="2"/>
+        <program id="eluting" volume="2" velocity="2"/>
+        <program id="eluting" volume="2" velocity="2"/>
+    </programs>
+</case>
