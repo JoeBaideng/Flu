@@ -1,74 +1,44 @@
+from abc import ABC, abstractmethod
 from pymodbus.client import ModbusTcpClient
 from pymodbus.transaction import ModbusRtuFramer
+import socket
 
-class ModbusDevice:
-    def __init__(self, name, ip, port):
-        """
-        初始化Modbus设备对象
-
-        Args:
-            name (str): 设备名称
-            ip (str): 设备IP地址
-            port (int): 设备端口号
-        """
+class SocketDevice():
+    def __init__(self, name, ip, port, protocol='ASCII'):
         self.name = name
         self.ip = ip
         self.port = port
-        self.client = ModbusTcpClient(ip, port, framer=ModbusRtuFramer)
+        self.protocol = protocol
+        self.socket_client = None
 
     def connect(self):
-        """
-        连接到Modbus设备
-        """
-        connected = self.client.connect()
-        if connected:
-            print(f"Connected to {self.name} at {self.ip}:{self.port}")
-        else:
-            print(f"Failed to connect to {self.name} at {self.ip}:{self.port}")
-
-    def send_request(self, request):
-        """
-        发送单个Modbus请求并返回响应
-
-        Args:
-            request: Modbus请求对象，格式为 [address, value, unit]
-
-        Returns:
-            响应结果
-        """
-        address, value, unit = request
         try:
-            write_response = self.client.write_register(address=address, value=value, unit=unit)
-            print(f"Request sent: address={address}, value={value}, unit={unit}")
-            print(f"Response: {write_response}")
-            return write_response
+            self.socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket_client.connect((self.ip, self.port))
+            print(f"Connected to {self.name} at {self.ip}:{self.port} using {self.protocol} protocol")
         except Exception as e:
-            print(f"Modbus Error: {e}")
-            return None
+            print(f"Failed to connect to {self.name} at {self.ip}:{self.port} using {self.protocol} protocol: {e}")
 
-    def send_requests(self, requests):
-        """
-        发送单个Modbus请求并返回响应
-
-        Args:
-            request: Modbus请求对象，格式为 [address, values, unit]
-
-        Returns:
-            响应结果
-        """
-        address, values, unit = requests
+    def send_command(self, command):
         try:
-            write_response = self.client.write_registers(address=address, values=values, unit=unit)
-            print(f"Request sent: address={address}, values={values}, unit={unit}")
-            print(f"Response: {write_response}")
-            return write_response
+            if self.protocol == 'ASCII':
+                self.socket_client.sendall((command + '\r\n').encode('ascii'))
+                print(f"ASCII Command sent: {command}")
+            elif self.protocol == 'RTU':
+                # Example: Modbus RTU command handling
+                pass
+            else:
+                print(f"Unsupported protocol: {self.protocol}")
+                return None
+
+            response = self.socket_client.recv(1024).decode('ascii').strip()
+            print(f"Response: {response}")
+            return response
         except Exception as e:
-            print(f"Modbus Error: {e}")
+            print(f"Error: {e}")
             return None
 
     def close(self):
-        """
-        关闭与Modbus设备的连接
-        """
-        self.client.close()
+        if self.socket_client:
+            self.socket_client.close()
         print(f"Connection to {self.name} closed")

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<commands>
+    <command>
+        <name>init_command</name>
+        <ascii>Z</ascii>
+        <type>action</type>
+        <description>初始化</description>
+    </command>
+    <command>
+        <name>suck_command</name>
+        <ascii>A</ascii>
+        <type>action</type>
+        <description>吸入</description>
+    </command>
+    <command>
+        <name>discharge_command</name>
+        <ascii>A</ascii>
+        <type>action</type>
+        <description>排出</description>
+    </command>
+    <command>
+        <name>adjust_speed_command</name>
+        <ascii>V</ascii>
+        <type>action</type>
+        <description>调节速度</description>
+    </command>
+    <command>
+        <name>stop_command</name>
+        <ascii>T</ascii>
+        <type>action</type>
+        <description>停止</description>
+    </command>
+    <command>
+        <name>query_position_command</name>
+        <ascii>?</ascii>
+        <type>report</type>
+        <description>查询位置</description>
+    </command>
+    <command>
+        <name>query_speed_command</name>
+        <ascii>?2</ascii>
+        <type>report</type>
+        <description>查询速度</description>
+    </command>
+</commands>
+

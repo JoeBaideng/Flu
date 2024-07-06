@@ -1,54 +1,52 @@
-import serial
-from pymodbus.client import ModbusTcpClient
-from pymodbus.transaction import ModbusRtuFramer
+import socket
+import xml.etree.ElementTree as ET
 
 
-class ModbusDevice:
-    def __init__(self, name, ip=None, port=None, protocol='rtu', serial_port=None, baudrate=9600):
+class ModbusASCIIDevice:
+    def __init__(self, name, ip, port):
         """
-        初始化Modbus设备对象
+        初始化Modbus ASCII设备对象
 
         Args:
             name (str): 设备名称
-            ip (str): 设备IP地址 (用于RTU/TCP协议)
-            port (int): 设备端口号 (用于RTU/TCP协议)
-            protocol (str): 协议类型，可以是 'rtu' 或 'ascii'
-            serial_port (str): 串口号 (用于ASCII协议)
-            baudrate (int): 串口波特率 (用于ASCII协议)
+            ip (str): 设备IP地址
+            port (int): 设备端口号
         """
         self.name = name
         self.ip = ip
         self.port = port
-        self.protocol = protocol.lower()
-        self.serial_port = serial_port
-        self.baudrate = baudrate
-        self.client = None
-        self.serial_client = None
+        self.socket_client = None
+        self.commands = {}
+        self.report_commands = {}
 
-        if self.protocol == 'ascii':
-            if serial_port is None:
-                raise ValueError("serial_port must be specified for ASCII protocol")
-        else:
-            if ip is None or port is None:
-                raise ValueError("ip and port must be specified for RTU protocol")
-            self.client = ModbusTcpClient(ip, port, framer=ModbusRtuFramer)
+    def load_commands_from_xml(self, file_path):
+        """
+        从XML文件中加载命令
+
+        Args:
+            file_path (str): XML文件路径
+        """
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+
+        for cmd in root.findall('command'):
+            name = cmd.find('name').text
+            ascii_code = cmd.find('ascii').text
+            if cmd.find('type').text == 'report':
+                self.report_commands[name] = ascii_code
+            else:
+                self.commands[name] = ascii_code
 
     def connect(self):
         """
-        连接到Modbus设备
+        连接到Modbus ASCII设备
         """
-        if self.protocol == 'ascii':
-            try:
-                self.serial_client = serial.Serial(self.serial_port, self.baudrate, timeout=1)
-                print(f"Connected to {self.name} on serial port {self.serial_port} using ASCII protocol")
-            except Exception as e:
-                print(f"Failed to connect to {self.name} on serial port {self.serial_port} using ASCII protocol: {e}")
-        else:
-            connected = self.client.connect()
-            if connected:
-                print(f"Connected to {self.name} at {self.ip}:{self.port} using RTU protocol")
-            else:
-                print(f"Failed to connect to {self.name} at {self.ip}:{self.port}")
+        try:
+            self.socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket_client.connect((self.ip, self.port))
+            print(f"Connected to {self.name} at {self.ip}:{self.port} using ASCII protocol")
+        except Exception as e:
+            print(f"Failed to connect to {self.name} at {self.ip}:{self.port} using ASCII protocol: {e}")
 
     def send_ascii_command(self, command):
         """
@@ -60,91 +58,128 @@ class ModbusDevice:
         Returns:
             响应结果
         """
-        if self.protocol != 'ascii':
-            print("Current protocol is not ASCII. Cannot send ASCII command.")
-            return None
-
         try:
-            self.serial_client.write((command + '\r\n').encode('ascii'))
+            self.socket_client.sendall((command + '\r\n').encode('ascii'))
             print(f"ASCII Command sent: {command}")
-            response = self.serial_client.readline().decode('ascii').strip()
-            print(f"Response: {response}")
+            response = self.socket_client.recv(1024)
+            print(f"Raw response: {response}")
+            response = response.decode('ascii', errors='ignore').strip()
+            print(f"Decoded response: {response}")
             return response
         except Exception as e:
             print(f"Modbus ASCII Error: {e}")
             return None
 
-    def send_request(self, request):
-        """
-        发送单个Modbus请求并返回响应
-
-        Args:
-            request: Modbus请求对象，格式为 [address, value, unit]
-
-        Returns:
-            响应结果
-        """
-        if self.protocol == 'ascii':
-            print("ASCII protocol does not use send_request method.")
-            return None
-
-        address, value, unit = request
-        try:
-            write_response = self.client.write_register(address=address, value=value, unit=unit)
-            print(f"Request sent: address={address}, value={value}, unit={unit}")
-            print(f"Response: {write_response}")
-            return write_response
-        except Exception as e:
-            print(f"Modbus RTU Error: {e}")
-            return None
-
-    def send_requests(self, requests):
-        """
-        发送多个Modbus请求并返回响应
-
-        Args:
-            request: Modbus请求对象，格式为 [address, values, unit]
-
-        Returns:
-            响应结果
-        """
-        if self.protocol == 'ascii':
-            print("ASCII protocol does not use send_requests method.")
-            return None
-
-        address, values, unit = requests
-        try:
-            write_response = self.client.write_registers(address=address, values=values, unit=unit)
-            print(f"Requests sent: address={address}, values={values}, unit={unit}")
-            print(f"Response: {write_response}")
-            return write_response
-        except Exception as e:
-            print(f"Modbus RTU Error: {e}")
-            return None
-
     def close(self):
         """
-        关闭与Modbus设备的连接
+        关闭与Modbus ASCII设备的连接
         """
-        if self.protocol == 'ascii':
-            if self.serial_client:
-                self.serial_client.close()
-        else:
-            self.client.close()
+        if self.socket_client:
+            self.socket_client.close()
         print(f"Connection to {self.name} closed")
 
+    def generate_command(self, command_name, param=None):
+        """
+        根据命令名称和参数生成ASCII命令
 
-# 示例代码
-device = ModbusDevice("MyDevice", serial_port='COM1', baudrate=9600, protocol='ascii')
-device.connect()
+        Args:
+            command_name (str): 命令名称
+            param (str): 命令参数
 
-command = '/1A0R'
-result = device.send_ascii_command(command)
-print(result)
+        Returns:
+            str: 生成的ASCII命令
+        """
+        if command_name in self.commands:
+            ascii_code = self.commands[command_name]
+        elif command_name in self.report_commands:
+            ascii_code = self.report_commands[command_name]
+        else:
+            print(f"Command '{command_name}' not found.")
+            return None
 
-if result:
-    print("Command sent successfully")
-else:
-    print("Failed to send command")
+        if param is None:
+            return f"/1{ascii_code}R"
+        else:
+            return f"/1{ascii_code}{param}R"
 
-device.close()
+    def execute(self, command_name, param=None):
+        """
+        根据命令名称和参数生成并发送ASCII命令
+
+        Args:
+            command_name (str): 命令名称
+            param (str): 命令参数
+
+        Returns:
+            响应结果
+        """
+        command = self.generate_command(command_name, param)
+        if command:
+            return self.send_ascii_command(command)
+
+    def parse_response(self, response):
+        """
+        解析返回的ASCII响应数据
+
+        Args:
+            response (str): ASCII响应数据
+
+        Returns:
+            dict: 解析后的数据字典
+        """
+        if response.startswith('/0`'):
+            data_value = response[3:-1]
+            return {"value": int(data_value)}
+
+        print(f"Unknown response format: {response}")
+        return None
+
+    def handle_report_command(self, command_name):
+        """
+        处理报告命令，解析返回的数据并输出报告内容
+
+        Args:
+            command_name (str): 命令名称
+
+        Returns:
+            int or None: 解析后的数值，如果解析失败返回 None
+        """
+        response = self.execute(command_name)
+        if response:
+            parsed_data = self.parse_response(response)
+            if parsed_data and 'value' in parsed_data:
+                if command_name == 'query_position_command':
+                    print(f"Position Report: {parsed_data['value']}")
+                elif command_name == 'query_speed_command':
+                    print(f"Speed Report: {parsed_data['value']}")
+                else:
+                    print(f"Unknown report command: {command_name}")
+                return parsed_data['value']
+            else:
+                print(f"Failed to parse response for {command_name}")
+        else:
+            print(f"No response for {command_name}")
+
+        return None
+
+
+def main():
+    # 初始化设备
+    device = ModbusASCIIDevice("MyDevice", ip='192.168.0.80', port=10123)
+    device.connect()
+
+    # 加载命令
+    device.load_commands_from_xml('configs/ascii_commands.xml')
+
+    # 执行命令并获取响应
+    response = device.execute("suck_command", param=3000)
+    print(f"Response: {response}")
+
+    # device.handle_report_command("query_position_command")
+    # device.handle_report_command("query_speed_command")
+
+    device.close()
+
+
+if __name__ == "__main__":
+    main()
