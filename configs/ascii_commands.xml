@@ -42,5 +42,17 @@
         <type>report</type>
         <description>查询速度</description>
     </command>
+    <command>
+        <name>valve_I_on</name>
+        <ascii>I</ascii>
+        <type>action</type>
+        <description>阀门I打开</description>
+    </command>
+     <command>
+        <name>valve_O_on</name>
+        <ascii>O</ascii>
+        <type>action</type>
+        <description>阀门O打开</description>
+    </command>
 </commands>
 

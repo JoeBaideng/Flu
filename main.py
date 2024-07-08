@@ -3,7 +3,7 @@ from Device import ASCIIDevice
 import DeviceInfoParser as info_parser
 
 # # 创建 TCP ASCII 设备实例
-# ascii_device = ASCIIDevice("TCP_ASCII_Device", "192.168.0.80", 10123)
+# ascii_device = ValveDevice("TCP_ASCII_Device", "192.168.0.80", 10123)
 # ascii_device.connect()
 # ascii_command = "/1ZR"  # 示例 ASCII 命令
 # ascii_device.send_command(ascii_command)

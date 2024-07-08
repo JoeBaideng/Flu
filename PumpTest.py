@@ -1,8 +1,8 @@
 import socket
 import xml.etree.ElementTree as ET
+import time
 
-
-class ModbusASCIIDevice:
+class ASCIIDevice:
     def __init__(self, name, ip, port):
         """
         初始化Modbus ASCII设备对象
@@ -162,24 +162,87 @@ class ModbusASCIIDevice:
 
         return None
 
+class PumpFunction:
+    def __init__(self, device):
+        self.device = device
+        self.device.connect()
+        self.device.load_commands_from_xml('configs/ascii_commands.xml')
+
+    def calculate_time(self, volume, speed):
+        return volume / speed
+
+    def run(self, func, volume, speed, Time=None):
+        init_time = 6000 / 1400
+        buffer_time = 2
+        command_time = 1
+
+        total_time = init_time + buffer_time
+        if Time is None:
+            operation_time = self.calculate_time(volume, speed)
+        else:
+            operation_time = Time
+
+        total_time += operation_time + buffer_time
+
+
+        if func == "suck":
+            self.device.execute("init_command")
+            time.sleep(init_time + buffer_time)
+
+        if func == "suck":
+            self.device.execute("valve_I_on")
+        elif func == "discharge":
+            self.device.execute("valve_O_on")
+        time.sleep(command_time)
+
+        self.device.execute("adjust_speed_command", param=str(speed))
+        time.sleep(command_time)
+
+        if func == "suck":
+            self.device.execute("suck_command", param=str(volume))
+        elif func == "discharge":
+            self.device.execute("discharge_command", param=str(volume))
+        time.sleep(operation_time + buffer_time)
+
+
+
+
+
 
 def main():
-    # 初始化设备
-    device = ModbusASCIIDevice("MyDevice", ip='192.168.0.80', port=10123)
-    device.connect()
+    device = ASCIIDevice("MyDevice", ip='192.168.0.80', port=10123)
+    pump_function = PumpFunction(device)
 
-    # 加载命令
-    device.load_commands_from_xml('configs/ascii_commands.xml')
+    func = "suck"  # or "discharge"
+    volume = 5000  # in 1/1000ml
+    speed = 1200    # in 1/1000ml/s
+    Time = None    # optional, can be specified or calculated
 
-    # 执行命令并获取响应
-    response = device.execute("suck_command", param=3000)
-    print(f"Response: {response}")
-
-    # device.handle_report_command("query_position_command")
-    # device.handle_report_command("query_speed_command")
-
-    device.close()
-
+    pump_function.run(func, volume, speed, Time)
+    pump_function.run("discharge",0,1200,None)
+    pump_function.device.close()
 
 if __name__ == "__main__":
     main()
+
+# def main():
+#     # 初始化设备
+#     device = ValveDevice("MyDevice", ip='192.168.0.80', port=10123)
+#     device.connect()
+#
+#     # 加载命令
+#     device.load_commands_from_xml('configs/ascii_commands.xml')
+#
+#     # 执行命令并获取响应
+#     response0 = device.execute("valve_I_on")
+#     # response = device.execute("suck_command", param=3000)
+#     print(f"Response: {response0}")
+#
+#     # device.handle_report_command("query_position_command")
+#     # device.handle_report_command("query_speed_command")
+#
+#     device.close()
+#
+#
+# if __name__ == "__main__":
+#     main()

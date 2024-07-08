@@ -1,0 +1,20 @@
+<commands>
+    <command>
+        <name>valve_switch</name>
+        <function_code>44</function_code>
+        <type>control</type>
+        <description>阀门切换</description>
+    </command>
+    <command>
+        <name>query_position</name>
+        <function_code>20</function_code>
+        <type>report</type>
+        <description>查询地址</description>
+    </command>
+    <command>
+        <name>query_current_pass</name>
+        <function_code>3E</function_code>
+        <type>report</type>
+        <description>查询当前通道</description>
+    </command>
+</commands>
