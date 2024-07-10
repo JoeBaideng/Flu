@@ -117,7 +117,7 @@ def main():
     device.load_commands_from_xml('configs/valve_commands.xml')
 
     # 示例: 切换阀门到2号口
-    response = device.execute("valve_switch", param=6)
+    response = device.execute("valve_switch", param=5)
     print(f"Response: {response}")
 
     # 示例: 查询地址

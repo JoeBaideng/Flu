@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<commands>
+    <command>
+        <name>set_on_off</name>
+        <register_address>0000</register_address>
+        <function_code>05</function_code>
+        <description>电磁阀开关控制</description>
+    </command>
+    <command>
+        <name>get_on_off</name>
+        <register_address>0000</register_address>
+        <function_code>01</function_code>
+        <description>获取电磁阀开关信息</description>
+    </command>
+</commands>
